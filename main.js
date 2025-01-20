@@ -58,7 +58,7 @@ async function mainMenu() {
         console.log(`${city.id} - ${city.name}`);
       });
       input = promptWithExit('Deine Eingabe: ');
-      const city = cities.find((city) => city.id === Number(input));
+      const city = cities.find((city) => city.id === parseInt(input));
       if (!city) {
         console.log('Ungültige Eingabe.');
         input = promptWithExit('Weiter mit Enter');
