@@ -2,6 +2,29 @@ import { styleText } from 'node:util';
 import promptSync from 'prompt-sync';
 const prompt = promptSync();
 
+const cities = [
+  {
+    id: 1,
+    name: 'Basel',
+  },
+  {
+    id: 2,
+    name: 'Freiburg',
+  },
+  {
+    id: 3,
+    name: 'Lörrach',
+  },
+  {
+    id: 4,
+    name: 'Oslo',
+  },
+  {
+    id: 5,
+    name: 'Sydney',
+  },
+];
+
 // Hauptmenü
 function mainMenu() {
   let output = styleText(
@@ -10,19 +33,25 @@ function mainMenu() {
   );
   console.log(output);
   while (true) {
-    let input = promptWithExit(
-      'Für welche Stadt willst du das Wetter wissen? '
-    );
-    let temperature = getTemperature();
-    displayWeather(input, temperature);
-
-    input = promptWithExit('Wie warm hättest du es gerne? ');
-    let tempInput = parseInt(input); // Eingabe in Zahl konvertieren
-    if (isNaN(tempInput)) {
-      console.log('Ungültige Eingabe (keine Zahl):', input);
+    console.log(`
+      ***** Hauptmenü *****
+      1 - Ort eingeben
+      2 - Stadt wählen
+      x - Programm beenden 
+     `);
+    let input = promptWithExit('Deine Eingabe: ');
+    if (input === '1') {
+      input = promptWithExit('Ort eingeben: ');
+      let temperature = getTemperature();
+      displayWeather(input, temperature);
+      input = promptWithExit('Weiter mit Enter');
+    } else if (input === '2') {
+      input = promptWithExit('TODO: Stadt wählen');
     } else {
-      console.log('Deine Wunschtemperatur:', tempInput);
+      console.log('Bitte gib 1, 2 oder x ein.');
+      input = promptWithExit('Weiter mit Enter');
     }
+    console.clear();
   }
 }
 
