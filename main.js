@@ -1,5 +1,8 @@
 import { styleText } from 'node:util';
+import OpenAI from 'openai';
 import promptSync from 'prompt-sync';
+
+const openai = new OpenAI();
 const prompt = promptSync();
 
 const cities = [
@@ -38,25 +41,15 @@ async function mainMenu() {
       ***** Hauptmenü *****
       1 - Ort eingeben
       2 - Stadt wählen
+      3 - KI-Suche
       x - Programm beenden 
      `);
     let input = promptWithExit('Deine Eingabe: ');
     if (input === '1') {
       input = promptWithExit('Ort eingeben: ');
-      const response = await fetch(
-        `https://geocoding-api.open-meteo.com/v1/search?name=${input}&language=de&count=1`
-      );
-      const data = await response.json();
-      if (!data.results) {
+      const result = await lookupCityAndWeather(input);
+      if (!result) {
         console.log(`Kein Ort gefunden für "${input}"`);
-      } else {
-        let { name, country, admin1, latitude, longitude } =
-          data.results[0];
-        let temperature = await getTemperature(latitude, longitude);
-        displayWeather(
-          `${name} (${admin1}, ${country})`,
-          temperature
-        );
       }
       input = promptWithExit('Weiter mit Enter');
     } else if (input === '2') {
@@ -74,11 +67,50 @@ async function mainMenu() {
       let temperature = await getTemperature();
       displayWeather(city.name, temperature);
       input = promptWithExit('Weiter mit Enter');
+    } else if (input === '3') {
+      input = promptWithExit('Beschreibe den Ort: ');
+      const completion = await openai.chat.completions.create({
+        messages: [
+          {
+            role: 'developer',
+            content:
+              'Du bekommst Beschreibungen von Orten und lieferst nur die passende Stadt. Wenn du keine Stadt findest, dann antwortest du mit "no result". Sonst gibst du mir keine weiteren Texte.',
+          },
+          { role: 'user', content: input },
+        ],
+        model: 'gpt-4o-mini',
+      });
+      const searchResult = completion.choices[0].message.content;
+      console.log('Ergebnis der KI-Suche:', searchResult);
+      if (searchResult === 'no result') {
+        console.log(`Kein Ort gefunden für "${input}"`);
+      } else {
+        const result = await lookupCityAndWeather(searchResult);
+        if (!result) {
+          console.log(`Kein Ort gefunden für "${searchResult}"`);
+        }
+      }
+      input = promptWithExit('Weiter mit Enter');
     } else {
       console.log('Bitte gib 1, 2 oder x ein.');
       input = promptWithExit('Weiter mit Enter');
     }
   }
+}
+
+async function lookupCityAndWeather(input) {
+  const response = await fetch(
+    `https://geocoding-api.open-meteo.com/v1/search?name=${input}&language=de&count=1`
+  );
+  const data = await response.json();
+  if (data.results) {
+    let { name, country, admin1, latitude, longitude } =
+      data.results[0];
+    let temperature = await getTemperature(latitude, longitude);
+    displayWeather(`${name} (${admin1}, ${country})`, temperature);
+    return true;
+  }
+  return false;
 }
 
 // Eingabe mit Prompt und Test, ob Programm beendet werden soll
