@@ -26,7 +26,7 @@ const cities = [
 ];
 
 // Hauptmenü
-function mainMenu() {
+async function mainMenu() {
   let output = styleText(
     'cyan',
     "Das Programm kann mit der Eingabe 'x' beendet werden."
@@ -43,8 +43,20 @@ function mainMenu() {
     let input = promptWithExit('Deine Eingabe: ');
     if (input === '1') {
       input = promptWithExit('Ort eingeben: ');
-      let temperature = getTemperature();
-      displayWeather(input, temperature);
+      const response = await fetch(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${input}&language=de&count=1`
+      );
+      const data = await response.json();
+      if (!data.results) {
+        console.log(`Kein Ort gefunden für "${input}"`);
+      } else {
+        let temperature = getTemperature();
+        let { name, country, admin1 } = data.results[0];
+        displayWeather(
+          `${name} (${admin1}, ${country})`,
+          temperature
+        );
+      }
       input = promptWithExit('Weiter mit Enter');
     } else if (input === '2') {
       console.log(`***** Stadt wählen *****`);
