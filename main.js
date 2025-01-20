@@ -33,6 +33,7 @@ function mainMenu() {
   );
   console.log(output);
   while (true) {
+    console.clear();
     console.log(`
       ***** Hauptmenü *****
       1 - Ort eingeben
@@ -46,12 +47,17 @@ function mainMenu() {
       displayWeather(input, temperature);
       input = promptWithExit('Weiter mit Enter');
     } else if (input === '2') {
-      input = promptWithExit('TODO: Stadt wählen');
+      console.log(`***** Stadt wählen *****`);
+      cities.forEach((city) => {
+        console.log(`${city.id} - ${city.name}`);
+      });
+      input = promptWithExit('Deine Eingabe: ');
+      console.log('Eingabe: ' + input);
+      input = promptWithExit('Weiter mit Enter');
     } else {
       console.log('Bitte gib 1, 2 oder x ein.');
       input = promptWithExit('Weiter mit Enter');
     }
-    console.clear();
   }
 }
 
