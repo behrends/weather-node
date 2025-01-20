@@ -52,7 +52,14 @@ function mainMenu() {
         console.log(`${city.id} - ${city.name}`);
       });
       input = promptWithExit('Deine Eingabe: ');
-      console.log('Eingabe: ' + input);
+      const city = cities.find((city) => city.id === Number(input));
+      if (!city) {
+        console.log('Ungültige Eingabe.');
+        input = promptWithExit('Weiter mit Enter');
+        continue;
+      }
+      let temperature = getTemperature();
+      displayWeather(city.name, temperature);
       input = promptWithExit('Weiter mit Enter');
     } else {
       console.log('Bitte gib 1, 2 oder x ein.');
