@@ -50,8 +50,9 @@ async function mainMenu() {
       if (!data.results) {
         console.log(`Kein Ort gefunden für "${input}"`);
       } else {
-        let temperature = getTemperature();
-        let { name, country, admin1 } = data.results[0];
+        let { name, country, admin1, latitude, longitude } =
+          data.results[0];
+        let temperature = await getTemperature(latitude, longitude);
         displayWeather(
           `${name} (${admin1}, ${country})`,
           temperature
@@ -70,7 +71,7 @@ async function mainMenu() {
         input = promptWithExit('Weiter mit Enter');
         continue;
       }
-      let temperature = getTemperature();
+      let temperature = await getTemperature();
       displayWeather(city.name, temperature);
       input = promptWithExit('Weiter mit Enter');
     } else {
@@ -92,8 +93,18 @@ function promptWithExit(message) {
 }
 
 // Ermittlung der Temperatur
-function getTemperature() {
-  return Math.floor(Math.random() * 10);
+async function getTemperature(latitude, longitude) {
+  if (latitude && longitude) {
+    // Temperatur von einer API abrufen
+    const response = await fetch(
+      `https://api.open-meteo.com/v1/forecast?current_weather=true&latitude=${latitude}&longitude=${longitude}`
+    );
+    const { current_weather } = await response.json();
+    return current_weather?.temperature;
+  } else {
+    // Zufallstemperatur
+    return Math.floor(Math.random() * 10);
+  }
 }
 
 // Ausgabe formatieren und anzeigen
