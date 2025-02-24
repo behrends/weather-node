@@ -1,6 +1,7 @@
 import { styleText } from 'node:util';
 import OpenAI from 'openai';
 import promptSync from 'prompt-sync';
+import showWeatherForLocation from './lib/weather-location.js';
 
 const openai = new OpenAI();
 const prompt = promptSync();
@@ -47,11 +48,7 @@ async function mainMenu() {
     let input = promptWithExit('Deine Eingabe: ');
     if (input === '1') {
       input = promptWithExit('Ort eingeben: ');
-      const result = await lookupCityAndWeather(input);
-      if (!result) {
-        console.log(`Kein Ort gefunden für "${input}"`);
-      }
-      input = promptWithExit('Weiter mit Enter');
+      await showWeatherForLocation(input);
     } else if (input === '2') {
       console.log(`***** Stadt wählen *****`);
       cities.forEach((city) => {
@@ -61,56 +58,37 @@ async function mainMenu() {
       const city = cities.find((city) => city.id === parseInt(input));
       if (!city) {
         console.log('Ungültige Eingabe.');
-        input = promptWithExit('Weiter mit Enter');
-        continue;
+      } else {
+        await showWeatherForLocation(city.name);
       }
-      let temperature = await getTemperature();
-      displayWeather(city.name, temperature);
-      input = promptWithExit('Weiter mit Enter');
     } else if (input === '3') {
       input = promptWithExit('Beschreibe den Ort: ');
-      const completion = await openai.chat.completions.create({
-        messages: [
-          {
-            role: 'developer',
-            content:
-              'Du bekommst Beschreibungen von Orten und lieferst nur die passende Stadt. Wenn du keine Stadt findest, dann antwortest du mit "no result". Sonst gibst du mir keine weiteren Texte.',
-          },
-          { role: 'user', content: input },
-        ],
-        model: 'gpt-4o-mini',
-      });
-      const searchResult = completion.choices[0].message.content;
-      console.log('Ergebnis der KI-Suche:', searchResult);
+      const searchResult = await askAIForLocation(input);
       if (searchResult === 'no result') {
         console.log(`Kein Ort gefunden für "${input}"`);
       } else {
-        const result = await lookupCityAndWeather(searchResult);
-        if (!result) {
-          console.log(`Kein Ort gefunden für "${searchResult}"`);
-        }
+        await showWeatherForLocation(searchResult, input);
       }
-      input = promptWithExit('Weiter mit Enter');
     } else {
       console.log('Bitte gib 1, 2 oder x ein.');
-      input = promptWithExit('Weiter mit Enter');
     }
+    promptWithExit('Weiter mit Enter');
   }
 }
 
-async function lookupCityAndWeather(input) {
-  const response = await fetch(
-    `https://geocoding-api.open-meteo.com/v1/search?name=${input}&language=de&count=1`
-  );
-  const data = await response.json();
-  if (data.results) {
-    let { name, country, admin1, latitude, longitude } =
-      data.results[0];
-    let temperature = await getTemperature(latitude, longitude);
-    displayWeather(`${name} (${admin1}, ${country})`, temperature);
-    return true;
-  }
-  return false;
+async function askAIForLocation(input) {
+  const completion = await openai.chat.completions.create({
+    messages: [
+      {
+        role: 'developer',
+        content:
+          'Du bekommst Beschreibungen von Orten und lieferst nur die passende Stadt. Wenn du keine Stadt findest, dann antwortest du mit "no result". Sonst gibst du mir keine weiteren Texte.',
+      },
+      { role: 'user', content: input },
+    ],
+    model: 'gpt-4o-mini',
+  });
+  return completion.choices[0].message.content;
 }
 
 // Eingabe mit Prompt und Test, ob Programm beendet werden soll
@@ -122,31 +100,6 @@ function promptWithExit(message) {
     process.exit(0);
   }
   return input;
-}
-
-// Ermittlung der Temperatur
-async function getTemperature(latitude, longitude) {
-  if (latitude && longitude) {
-    // Temperatur von einer API abrufen
-    const response = await fetch(
-      `https://api.open-meteo.com/v1/forecast?current_weather=true&latitude=${latitude}&longitude=${longitude}`
-    );
-    const { current_weather } = await response.json();
-    return current_weather?.temperature;
-  } else {
-    // Zufallstemperatur
-    return Math.floor(Math.random() * 10);
-  }
-}
-
-// Ausgabe formatieren und anzeigen
-function displayWeather(input, temp) {
-  let output = styleText('blue', temp + '');
-  const now = new Date(); // aktueller Zeitpunkt
-  const time = now.toLocaleTimeString('de-DE'); // Zeit in deutschem Format
-  const weatherOutput = `Temperatur in ${input} um ${time}: ${output} Grad`;
-  console.log(weatherOutput);
-  console.log(temp < 5 ? 'Ziemlich kalt!' : 'Nicht zu kalt!');
 }
 
 // starte Hauptmenü
