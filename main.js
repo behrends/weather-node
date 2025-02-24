@@ -1,33 +1,23 @@
 import { styleText } from 'node:util';
+import fs from 'fs';
 import OpenAI from 'openai';
 import promptSync from 'prompt-sync';
 import showWeatherForLocation from './lib/weather-location.js';
+import Location from './lib/location.js';
 
 const openai = new OpenAI();
 const prompt = promptSync();
 
-const cities = [
-  {
-    id: 1,
-    name: 'Basel',
-  },
-  {
-    id: 2,
-    name: 'Freiburg',
-  },
-  {
-    id: 3,
-    name: 'Lörrach',
-  },
-  {
-    id: 4,
-    name: 'Oslo',
-  },
-  {
-    id: 5,
-    name: 'Sydney',
-  },
-];
+let locationList = [];
+try {
+  const jsonData = await import('./data.json', {
+    with: { type: 'json' },
+  });
+  locationList = jsonData.default;
+} catch (error) {
+  console.log('Keine Daten gefunden!');
+  prompt('Weiter mit beliebiger Taste');
+}
 
 // Hauptmenü
 async function mainMenu() {
@@ -48,18 +38,39 @@ async function mainMenu() {
     let input = promptWithExit('Deine Eingabe: ');
     if (input === '1') {
       input = promptWithExit('Ort eingeben: ');
-      await showWeatherForLocation(input);
+      const location = await showWeatherForLocation(input);
+      if (location) {
+        const newLocation = new Location(
+          locationList.length + 1,
+          location.name
+        );
+        // check if location already exists
+        const loc = locationList.find(
+          (item) => item.name === location.name
+        );
+        if (!loc) {
+          locationList.push(newLocation);
+          const jsonString = JSON.stringify(locationList);
+          fs.writeFileSync('./data.json', jsonString);
+        }
+      }
     } else if (input === '2') {
-      console.log(`***** Stadt wählen *****`);
-      cities.forEach((city) => {
-        console.log(`${city.id} - ${city.name}`);
-      });
-      input = promptWithExit('Deine Eingabe: ');
-      const city = cities.find((city) => city.id === parseInt(input));
-      if (!city) {
-        console.log('Ungültige Eingabe.');
+      if (!locationList.length) {
+        console.log('Keine Städte gefunden!');
       } else {
-        await showWeatherForLocation(city.name);
+        console.log(`***** Stadt wählen *****`);
+        locationList.forEach((city) => {
+          console.log(`${city.id} - ${city.name}`);
+        });
+        input = promptWithExit('Deine Eingabe: ');
+        const city = locationList.find(
+          (city) => city.id === parseInt(input)
+        );
+        if (!city) {
+          console.log('Ungültige Eingabe.');
+        } else {
+          await showWeatherForLocation(city.name);
+        }
       }
     } else if (input === '3') {
       input = promptWithExit('Beschreibe den Ort: ');
