@@ -82,7 +82,7 @@ async function askAIForLocation(input) {
       {
         role: 'developer',
         content:
-          'Du bekommst Beschreibungen von Orten und lieferst nur die passende Stadt. Wenn du keine Stadt findest, dann antwortest du mit "no result". Sonst gibst du mir keine weiteren Texte.',
+          'Du bekommst Beschreibungen von Orten und lieferst nur die passende Stadt. Wenn du keine Stadt findest, dann antwortest du mit "no result". Überprüfe deine eigene Antwort, ob es die Stadt wirklich gibt. Sonst gibst du mir keine weiteren Texte.',
       },
       { role: 'user', content: input },
     ],
