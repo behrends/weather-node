@@ -1,11 +1,10 @@
 import { styleText } from 'node:util';
 import fs from 'fs';
-import OpenAI from 'openai';
 import promptSync from 'prompt-sync';
 import showWeatherForLocation from './lib/weather-location.js';
 import Location from './lib/location.js';
+import aiSearch from './lib/ai.js';
 
-const openai = new OpenAI();
 const prompt = promptSync();
 
 let locationList = [];
@@ -73,12 +72,12 @@ async function mainMenu() {
         }
       }
     } else if (input === '3') {
-      input = promptWithExit('Beschreibe den Ort: ');
-      const searchResult = await askAIForLocation(input);
-      if (searchResult === 'no result') {
-        console.log(`Kein Ort gefunden für "${input}"`);
-      } else {
-        await showWeatherForLocation(searchResult, input);
+      let location = await aiSearch();
+      if (location) {
+        await showWeatherForLocation(location, input);
+        // console.clear();
+        // await weatherByLocation(location);
+        // addLocation(location);
       }
     } else {
       console.log('Bitte gib 1, 2 oder x ein.');
