@@ -11,8 +11,8 @@
   "license": "MIT",
   "description": "",
   "dependencies": {
-    "@ai-sdk/openai": "^1.1.14",
-    "ai": "^4.1.46",
+    "@ai-sdk/openai": "^1.2.4",
+    "ai": "^4.1.59",
     "prompt-sync": "^4.2.0"
   }
 }
